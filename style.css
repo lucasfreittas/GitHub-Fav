@@ -147,3 +147,7 @@ td .remove{
 
     color: red;
 }
+
+td .remove:hover{
+    cursor: pointer;
+}
