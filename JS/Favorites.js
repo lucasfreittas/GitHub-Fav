@@ -1,29 +1,51 @@
+import { GithubUser } from "./GithubUser.js";
+
+
 export class Favorites {
     constructor(root){
         this.root = document.querySelector(root)
-        this.entries = [
-            {
-                login: 'maykbrito',
-                name: 'Mayk Brito',
-                public_repos: '76',
-                followers: '120000',
-            },
-            {
-                login: 'diego3g',
-                name: 'Diego Fernandes',
-                public_repos: '150',
-                followers: '122330',
-            },
+        this.load()
         
-        ]
 
-        
+    }
+
+    load(){
+        this.entries = JSON.parse(localStorage.getItem('@github-favorites:')) || []
+    }
+
+    save() {
+        localStorage.setItem('@github-favorites:', JSON.stringify(this.entries))
+    }
+
+    async add(username){
+        try{
+
+            const userExists = this.entries.find(entry => entry.login === username);
+
+            if(userExists){
+                throw new Error ('Usuário já cadastrado')
+            }
+
+            const user = await GithubUser.search(username)
+
+            if(user.login === undefined){
+                throw new Error('Usuário não encontrado!')
+            }
+
+            this.entries = [user, ...this.entries]
+            this.update()
+            this.save()
+
+        }catch(error) {
+            alert(error.message)
+        }
     }
 
     delete(user){
             const filteredEntries = this.entries.filter((entry) => entry.login !== user.login)
             this.entries = filteredEntries
             this.update()
+            this.save()
     }
     
 }
@@ -34,12 +56,22 @@ export class FavoritesView extends Favorites {
         this.tbody = this.root.querySelector('table tbody')
 
         this.update()
+        this.onadd()
+    }
+
+    onadd(){
+        const addButton = this.root.querySelector('.search button')
+        addButton.onclick = () => {
+            const { value } = this.root.querySelector('.search input')
+
+            this.add(value)
+        }
     }
 
     update(){
 
         this.removeAllTr()
-        this.entries.forEach(user => {
+        this.entries.forEach( user => {
             const row = this.createRow()
 
             row.querySelector('.user img').src = `https://github.com/${user.login}.png`;
